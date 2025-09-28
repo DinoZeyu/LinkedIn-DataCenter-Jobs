@@ -12,9 +12,17 @@ def load_cookies(driver, filename="cookies.pkl"):
     if not os.path.exists(filename):
         print("Cookie 文件不存在")
         return False
+    
     with open(filename, "rb") as f:
         cookies = pickle.load(f)
+
     for cookie in cookies:
-        driver.add_cookie(cookie)
+        # 删除 expiry，避免 float 报错
+        cookie.pop("expiry", None)
+        try:
+            driver.add_cookie(cookie)
+        except Exception as e:
+            print(f"跳过无效 cookie: {cookie.get('name')} ({e})")
+
     print("Cookies 已载入")
     return True
