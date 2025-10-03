@@ -28,7 +28,7 @@ def _is_session_active(driver) -> bool:
     current_url = (driver.current_url or "").lower()
     if any(keyword in current_url for keyword in LOGIN_STATUS_KEYWORDS):
         return False
-    if driver.find_elements(By.ID, "username"):  # 登录页的用户名输入框
+    if driver.find_elements(By.ID, "username"):  ## Find Username field
         return False
     return True
 
@@ -60,18 +60,18 @@ def init_driver(
 ):
     options = Options()
 
-    # 初始化 WebDriver
+    # WebDriver Initialization Options
     options.add_argument("disable-blink-features=AutomationControlled")
 
-    # 伪造请求头
+    # Get around basic bot detection
     options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36 Edg/103.0.1264.49"
     )
 
-    # 隐藏“正受到自动测试软件的控制”提示
+    # Hide "Chrome is being controlled by automated test software" infobar
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
-    # 禁用自动化扩展
+    # Ban Automation Extension
     # options.add_experimental_option("useAutomationExtension", False)
 
     if headless:
@@ -79,18 +79,18 @@ def init_driver(
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-gpu")
 
-    # 初始化 WebDriver
+    # Utlize WebDriver
     driver = webdriver.Chrome(service=Service(CHROME_DRIVER_PATH), options=options)
     if page_load_timeout and page_load_timeout > 0:
         driver.set_page_load_timeout(page_load_timeout)
-    driver.get("https://www.linkedin.com")  # 必须先打开域名才能加 cookie
+    driver.get("https://www.linkedin.com")  
 
 
-    # 载入 cookie
+    # Load Cookie
     cookies_loaded = load_cookies(driver, cookies_file)
     if cookies_loaded:
         driver.refresh()
-        time.sleep(3)  # 等待页面刷新完成
+        time.sleep(3)  # Wait for page to load
     else:
         print("No valid cookies found; performing interactive login")
         driver.delete_all_cookies()
@@ -134,7 +134,7 @@ def worker(
                     if delay > 0:
                         time.sleep(delay)
 
-                data = job.handler(driver, job.url, time_sleep=3, wait_time=60) # set a longer wait_time to ensure not affected by anti-bot
+                data = job.handler(driver, job.url, time_sleep=4, wait_time=60) # set a longer wait_time to ensure not affected by anti-bot
                 if data is None:
                     raise RuntimeError("handler returned empty result")
 
@@ -205,10 +205,10 @@ def run_crawler(
         t.start()
         threads.append(t)
 
-    # 等待所有任务完成
+    # wait all jobs to be processed
     job_queue.join()
 
-    # 等待所有线程退出
+    # wait all threads to exit
     for t in threads:
         t.join()
 
@@ -221,7 +221,7 @@ def save_results(results, output_file="results.json"):
     print(f"Results saved to {output_file}")
 
 def main(args):
-    # 载入args
+    # Load arguments
     keywords = args.keywords
     states = args.states
     num_workers = args.workers
@@ -232,16 +232,17 @@ def main(args):
     headless = args.headless
     cookies_file = args.cookies_file
     page_load_timeout = args.page_timeout
+    output_file = args.output_file
 
     if sleep_max < sleep_min:
         sleep_max = sleep_min
 
 
-    # 生成爬虫队列
+    # Generate URLs and create jobs
     urls = generate_urls(keyword=keywords, states=states)
     jobs = [CrawlerJob(url, linkedin_page_crawler) for url in urls]
 
-    # 运行爬虫
+    # Run crawler
     results = run_crawler(
         jobs,
         num_workers,
@@ -253,13 +254,11 @@ def main(args):
         retry_backoff=retry_backoff,
         page_load_timeout=page_load_timeout,
     )
-    print(f"爬取完成，共获得 {len(results)} 条结果")
+    print(f"Finish crwaling, there are {len(results)} results collected.")
 
-    # 保存结果
-    save_results(results)
-
-    # 退出
-    print("所有任务完成，退出")
+    # Save results to file
+    save_results(results, output_file=output_file)
+    print("Finish all tasks. Exiting.")
     
 
 if __name__ == "__main__":
@@ -274,6 +273,7 @@ if __name__ == "__main__":
     args.add_argument("--headless", action="store_true", help="Run Chrome in headless mode")
     args.add_argument("--cookies-file", type=str, default="cookies.pkl", help="Path to cookies file")
     args.add_argument("--page-timeout", type=float, default=60.0, help="Page load timeout in seconds")
+    args.add_argument("--output-file", type=str, default="results.json", help="Output file for results")
     args = args.parse_args()
 
     print("Args:", args)
@@ -281,3 +281,4 @@ if __name__ == "__main__":
 # Example usage:
 # python main.py --keywords "Software Engineer" --states "California" "New York" --workers 5
 # python main.py --keywords "Data Center" --states "Texas" --workers 1
+# python main.py --keywords "Data Center" --states "California" --workers 1
