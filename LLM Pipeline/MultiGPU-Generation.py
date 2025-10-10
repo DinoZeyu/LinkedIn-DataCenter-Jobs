@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+import re
 import pandas as pd
 from tqdm import tqdm
 from unsloth import FastLanguageModel
@@ -21,30 +22,50 @@ def load_model(model_path: str, device_id: int):
     return model, tokenizer, device
 
 
+def extract_json_safe(text: str) -> dict:
+    match = re.search(r"<json>(.*?)</json>", text, re.DOTALL)
+    candidate = match.group(1) if match else text
+    
+    candidate = candidate.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
+    candidate = candidate.replace("'", '"')  
+    candidate = re.sub(r",\s*}", "}", candidate)  
+    candidate = re.sub(r",\s*\]", "]", candidate)
 
-def extract_json(text: str) -> dict:
-    start, end = text.find("{"), text.rfind("}") + 1
-    if start == -1 or end <= start:
-        return {k: None for k in ["role", "domain", "core_skills", "soft_skills", "summary"]}
-    try:
-        return json.loads(text[start:end].strip())
-    except Exception:
-        return {k: None for k in ["role", "domain", "core_skills", "soft_skills", "summary"]}
+    blocks = re.findall(r"\{.*?\}", candidate, re.DOTALL)
+
+    for b in blocks[::-1]:  
+        try:
+            data = json.loads(b)
+            if all(k in data for k in ["role", "domain", "core_skills", "soft_skills", "summary"]):
+                return data
+        except json.JSONDecodeError:
+            continue
+    return {k: None for k in ["role", "domain", "core_skills", "soft_skills", "summary"]}
 
 
 
 def generate_batch(model, tokenizer, descriptions, device, batch_size=2):
     prompts = [
-        f"""You are an expert job-analysis assistant.
-Read the following job description and extract key structured information.
+    f"""You are an expert job-analysis assistant.
 
-Return ONLY a valid JSON object with the following keys:
-role, domain, core_skills, soft_skills, and summary.
+Extract the following information **as JSON only**:
+- role
+- domain
+- core_skills
+- soft_skills
+- summary
+
+Return **nothing else** except a valid JSON object.
+Wrap the JSON inside <json>...</json> tags.
 
 ### Job Description:
 {desc}
-""" for desc in descriptions
-    ]
+
+### Output:
+<json>{{"role": "", "domain": "", "core_skills": [], "soft_skills": [], "summary": ""}}</json>
+"""
+for desc in descriptions
+]
 
     inputs = tokenizer(prompts, return_tensors="pt", padding=True,
                        truncation=True, max_length=8192).to(device)
@@ -73,7 +94,7 @@ def process_chunk(rank, model_path, df_chunk, save_prefix, batch_size=2):
         outputs = generate_batch(model, tokenizer, descs, device, batch_size=batch_size)
 
         for j, text in enumerate(outputs):
-            result = extract_json(text)
+            result = extract_json_safe(text)
             idx = batch.index[j]
             for key in ["role", "domain", "core_skills", "soft_skills", "summary"]:
                 df_chunk.at[idx, key] = result.get(key)
