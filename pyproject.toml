@@ -1,0 +1,67 @@
+[project]
+name = "unsloth-sft-benchmark"
+version = "0.1.0"
+description = "LoRA / PEFT fine-tuning using Unsloth + HuggingFace"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+
+dependencies = [
+  # === 🧠 Core fine-tuning stack ===
+  "unsloth==2025.10.1",
+  "unsloth-zoo==2025.10.1",
+  "transformers>=4.55.0,<4.56.3",
+  "datasets>=3.4.1,<4.0.0",        # ✅ required by unsloth-zoo
+  "accelerate>=0.34.1,<1.0",
+  "peft>=0.11,<1.0",
+  "sentencepiece>=0.1.99",
+  "bitsandbytes>=0.43 ; platform_system == 'Linux'",
+  "safetensors>=0.4",
+
+  # === ⚙️ Performance + CUDA optimization ===
+  "torch==2.8.0",                  # CPU placeholder (will replace with +cu128)
+  "torchvision",
+  "torchaudio",
+  "xformers==0.0.32.post2",
+  "triton==3.4.0",
+  "cut_cross_entropy",
+  "hf_transfer",
+
+  # === 📊 Evaluation and tracking ===
+  "evaluate>=0.4",
+  "wandb>=0.22.2",
+  "scikit-learn>=1.4",
+  "tqdm>=4.66",
+  "matplotlib>=3.8",
+
+  # === 🧰 Utilities ===
+  "python-dotenv",
+  "pandas",
+  "numpy",
+  "pillow",
+  "tyro",
+  "msgspec",
+  "zmq",
+  "nvitop",
+
+  # === 🌐 API clients ===
+  "huggingface_hub>=0.25,<1.0",
+  "openai>=1.45,<2.0",
+  "tiktoken>=0.7",
+  "rich>=13.7",
+  "tenacity>=8.3",
+
+  # === 💻 Jupyter environment ===
+  "jupyterlab>=4.0",
+  "ipykernel>=6.28",
+]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = []
+
+# ✅ enable CUDA wheels for A100 GPUs
+[tool.uv.pip]
+extra-index-url = ["https://download.pytorch.org/whl/cu128"]
