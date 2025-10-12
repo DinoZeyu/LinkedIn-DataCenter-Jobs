@@ -133,12 +133,12 @@ def main():
         pass
 
     model_path = "llama3_8b_jobextractor_sft"
-    input_csv = "annotated_jobs_1000.csv"
-    output_csv = "annotated_jobs_full_multigpu.csv"
-    save_prefix = "annotated_jobs_partial"
+    input_csv = "unannotated_jobs_part2_input.csv"
+    output_csv = "annotated_jobs_part2_output.csv"
+    save_prefix = "annotated_jobs_partial_part2"
 
     df = pd.read_csv(input_csv)
-    df_to_annotate = df.iloc[1000:].copy()
+    df_to_annotate = df.copy()
 
     num_gpus = torch.cuda.device_count()
     chunks = split_dataframe(df_to_annotate, num_gpus)
