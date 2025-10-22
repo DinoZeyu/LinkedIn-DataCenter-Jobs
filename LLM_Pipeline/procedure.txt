@@ -1,0 +1,4 @@
+srun -A jiazhang_next_generation_ai_0002 -p short --gres=gpu:2 -N1 -t 240 --pty bash
+srun -A jiazhang_next_generation_ai_0002 -p batch --gres=gpu:4 -N1 -t 420 --pty bash
+conda activate unsloth-sft-benchmark
+python MultiGPU-Generation.py

@@ -205,7 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Unsloth
 unsloth_compiled_cache/
 unsloth_sft_benchmark.egg-info
-
+outputs/
+outputs_refined/
 *.pkl
