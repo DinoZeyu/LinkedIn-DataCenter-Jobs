@@ -56,7 +56,7 @@ Wrap the JSON inside <json>...</json> tags.
 def process_all_csvs(input_dir="Datasets", output_dir="Generated_Outputs", total_parts=20):
     os.makedirs(output_dir, exist_ok=True)
 
-    for i in range(14, total_parts + 1):  
+    for i in range(1, total_parts + 1):  
         part_str = f"{i:02d}"
         input_file = os.path.join(input_dir, f"unannotated_jobs_part-{part_str}of{total_parts}_input.csv")
         output_file = os.path.join(output_dir, f"annotated_jobs_part-{part_str}of{total_parts}_output.csv")
